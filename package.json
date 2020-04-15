@@ -1,0 +1,19 @@
+{
+  "name": "maze",
+  "version": "1.0.0",
+  "description": "Solve maze using AI",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ThayPedroso/Maze.git"
+  },
+  "author": "Thayla Pedroso",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ThayPedroso/Maze/issues"
+  },
+  "homepage": "https://github.com/ThayPedroso/Maze#readme"
+}
