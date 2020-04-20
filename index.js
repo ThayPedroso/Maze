@@ -82,6 +82,8 @@ QueueFrontier.prototype.remove = function() {
 
 function Maze(filename) {
 
+    let solution = []
+
     // Read file
     const contents = fs.readFileSync(filename, 'utf8')
     console.log(contents)
@@ -102,6 +104,35 @@ function Maze(filename) {
     console.log(height)
     let width = contentsLines[0].split('').length
     console.log(width)
+
+    // Keep track of walls
+    let walls = []
+    for(let i = 0; i < height; i++) {
+        let row = []
+        for(let j = 0; j < width; j++) {
+            // console.log(`(i=${i},j=${j}) ${contentsLines[i][j]}`)
+            try {
+                if (contentsLines[i][j] === 'A') {
+                    const start = [i, j]
+                    row.push(false)
+                }
+                else if (contentsLines[i][j] === 'B') {
+                    const goal = [i, j]
+                    row.push(false)
+                }
+                else if (contentsLines[i][j] === ' ') {
+                    row.push(false)
+                }
+                else {
+                    row.push(true)
+                }
+            } catch {
+                row.push(false)
+            }
+        }
+        walls.push(row)
+    }
+    console.log(walls)
 
 }
 

@@ -1,2 +1,2 @@
 # Maze
- Solve maze using AI
+ Solve maze using AI.
