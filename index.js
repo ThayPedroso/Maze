@@ -101,9 +101,11 @@ function Maze(filename) {
     // Determine height and width of maze
     let contentsLines = contents.split(/[\r\n]+/g)
     let height = contentsLines.length
-    console.log(height)
+    this.height = height
+    // console.log(height)
     let width = contentsLines[0].split('').length
-    console.log(width)
+    this.width = width
+    // console.log(width)
 
     // Keep track of walls
     let walls = []
@@ -113,11 +115,11 @@ function Maze(filename) {
             // console.log(`(i=${i},j=${j}) ${contentsLines[i][j]}`)
             try {
                 if (contentsLines[i][j] === 'A') {
-                    const start = [i, j]
+                    this.start = [i, j]
                     row.push(false)
                 }
                 else if (contentsLines[i][j] === 'B') {
-                    const goal = [i, j]
+                    this.goal = [i, j]
                     row.push(false)
                 }
                 else if (contentsLines[i][j] === ' ') {
@@ -132,9 +134,53 @@ function Maze(filename) {
         }
         walls.push(row)
     }
-    console.log(walls)
+    // console.log(walls)
+    this.walls = walls
 
 }
+
+Maze.prototype.neighbors = function(state) {
+    [row, col] = state
+    let candidates = {
+        up: [row - 1, col],
+        down: [row + 1, col],
+        left: [row, col - 1],
+        right: [row, col + 1],
+    }
+
+    let result = []
+    Object.entries(candidates).forEach(([action, [r,c]]) => {
+        // console.log(`${action}: ${r},${c}`)
+        // console.log(!this.walls[r][c])
+        
+        if (r >= 0 && r < this.height && c >= 0 && c < this.width && !this.walls[r][c]){
+            const availableActions = {}
+            Object.defineProperty(availableActions, action, { 
+                enumerable: true, 
+                writable: false, 
+                value: [r,c]
+            })
+            result.push(availableActions)
+        }
+    })
+    // console.log(result)
+    this.result = result
+}
+
+// def neighbors(self, state):
+// row, col = state
+// candidates = [
+//     ("up", (row - 1, col)),
+//     ("down", (row + 1, col)),
+//     ("left", (row, col - 1)),
+//     ("right", (row, col + 1))
+// ]
+
+// result = []
+// for action, (r, c) in candidates:
+//     if 0 <= r < self.height and 0 <= c < self.width and not self.walls[r][c]:
+//         result.append((action, (r, c)))
+// return result
 
 let myArgs = process.argv.slice(2)
 
@@ -144,3 +190,5 @@ if (myArgs.length !== 1) {
 }
 
 m = new Maze(myArgs[0])
+console.log(m.start)
+m.neighbors(m.goal)
