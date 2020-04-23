@@ -1,6 +1,11 @@
 const fs = require('fs')
 
-// Create node object
+/**
+ * Create node object
+ * @param {State} state 
+ * @param {ParentNode} parent 
+ * @param {Action} action 
+ */
 function Node (state, parent, action) {
     return {
         state,
@@ -9,6 +14,9 @@ function Node (state, parent, action) {
     }
 }
 
+/**
+ * Create a Stackfrontier to a Depth-First Search
+ */
 function StackFrontier () {
     let frontier = []
     this.frontier = frontier
@@ -26,19 +34,22 @@ StackFrontier.prototype.contains_state = function(state) {
 }
 
 StackFrontier.prototype.empty = function() {
-    return frontier.length === 0
+    return this.frontier.length === 0
 }
 
 StackFrontier.prototype.remove = function() {
     if(this.empty()) {
         console.log('empty frontier')
     } else {
-        node = frontier[frontier.length - 1]
+        node = this.frontier[this.frontier.length - 1]
         this.frontier.pop()
         return node
     }
 }
 
+/**
+ * Create a Queuefrontier to a Breadth-First Search
+ */
 function QueueFrontier() {
     StackFrontier.call(this)
 }
@@ -51,42 +62,22 @@ QueueFrontier.prototype.remove = function() {
     if(this.empty()) {
         console.log('empty frontier')
     } else {
-        node = frontier[0]
+        node = this.frontier[0]
         this.frontier.shift()
         return node
     }
 }
 
-// const start = Node([1,1], undefined, undefined)
-// const finish = Node([2,2], undefined, undefined)
-// // console.log(start)
-// let frontier = new StackFrontier()
-// frontier.add(finish)
-// frontier.add(start)
-// console.log(frontier)
-
-// console.log(frontier.contains_state([2,1]))
-// frontier.remove()
-// console.log(frontier)
-// console.log(frontier.contains_state([1,1]))
-
-// let bfsFrontier = new QueueFrontier()
-// bfsFrontier.add(start)
-// bfsFrontier.add(finish)
-// console.log(bfsFrontier)
-// console.log(bfsFrontier.contains_state([1,1]))
-// console.log(bfsFrontier.contains_state([2,2]))
-// bfsFrontier.remove()
-// console.log(bfsFrontier.frontier[0].state)
-// console.log(bfsFrontier.contains_state([2,2]))
-
+/**
+ * Create maze from .txt read file. 
+ * @param {Filename} filename maze txt file.
+ */
 function Maze(filename) {
 
     let solution = []
 
     // Read file
     const contents = fs.readFileSync(filename, 'utf8')
-    console.log(contents)
 
     // Validate start and goal
     if ((contents.match(/A/g) || []).length !== 1) {
@@ -102,17 +93,14 @@ function Maze(filename) {
     let contentsLines = contents.split(/[\r\n]+/g)
     let height = contentsLines.length
     this.height = height
-    // console.log(height)
     let width = contentsLines[0].split('').length
     this.width = width
-    // console.log(width)
 
     // Keep track of walls
     let walls = []
     for(let i = 0; i < height; i++) {
         let row = []
         for(let j = 0; j < width; j++) {
-            // console.log(`(i=${i},j=${j}) ${contentsLines[i][j]}`)
             try {
                 if (contentsLines[i][j] === 'A') {
                     this.start = [i, j]
@@ -134,11 +122,53 @@ function Maze(filename) {
         }
         walls.push(row)
     }
-    // console.log(walls)
     this.walls = walls
-
 }
 
+/**
+ * Check if given array contains state
+ * @param {Array} array array to be iterated.
+ * @param {State} state searched state.
+ */
+Maze.prototype.contains_state = function(array, state) {
+    for (node of array) {
+        if (node[0] === state[0] && node[1] === state[1]) return true 
+    }
+    return false
+}
+
+/**
+ * Prints maze
+ */
+Maze.prototype.print = function() {
+    solution = this.solution === undefined ? undefined : this.solution.cells
+    if (this.solution) console.log(solution)
+    process.stdout.write("\n")
+    for(let i = 0; i < this.walls.length; i++) {
+        for (let j = 0; j < this.walls[0].length; j++) {
+            if (this.walls[i][j]) process.stdout.write("█")
+            else if (i === this.start[0] && j === this.start[1]) {
+                process.stdout.write("A")
+            }
+            else if (i === this.goal[0] && j === this.goal[1]) {
+                process.stdout.write("B")
+            }
+            else if (solution !== undefined && this.contains_state(solution, [i,j])) { // complete
+                process.stdout.write("*")
+            }
+            else {
+                process.stdout.write(" ")
+            }
+        }
+        process.stdout.write("\n")
+    }
+    process.stdout.write("\n")
+}
+
+/**
+ * Returns the set of actions that can be executed in state.
+ * @param {currentState} state current state.
+ */
 Maze.prototype.neighbors = function(state) {
     [row, col] = state
     let candidates = {
@@ -150,8 +180,6 @@ Maze.prototype.neighbors = function(state) {
 
     let result = []
     Object.entries(candidates).forEach(([action, [r,c]]) => {
-        // console.log(`${action}: ${r},${c}`)
-        // console.log(!this.walls[r][c])
         
         if (r >= 0 && r < this.height && c >= 0 && c < this.width && !this.walls[r][c]){
             const availableActions = {}
@@ -163,17 +191,84 @@ Maze.prototype.neighbors = function(state) {
             result.push(availableActions)
         }
     })
-    // console.log(result)
     this.result = result
+    return this.result
 }
+
+/**
+ * Finds a solution to maze, if one exists.
+ */
+Maze.prototype.solve = function() {
+
+    // Keep track of number of states explored
+    this.num_explored = 0
+
+    // Initialize frontier to just the starting position
+    const start = Node(this.start, undefined, undefined)
+    let frontier = new StackFrontier()
+    frontier.add(start)
+
+    // Initialize an empty explored set
+    this.explored = []
+
+    // Keep looping until solution found
+    while (true) {
+
+        // If nothing left in frontier, then no path
+        if (frontier.empty()) {
+            console.log('No solution')
+            return
+        }
+
+        // Choose a node from the frontier
+        let node = frontier.remove()
+        this.num_explored += 1
+
+        // If node is the goal, then we have a solution
+        if (node.state[0] == this.goal[0] && node.state[1] == this.goal[1]) {
+            let actions = []
+            let cells = []
+            while (node.parent) {
+                actions.push(node.action)
+                cells.push(node.state)
+                node = node.parent
+            }
+            this.solution = { actions: actions.reverse(), cells: cells.reverse() }
+            return
+        }
+
+        // Mark node as explored
+        this.explored.push(node.state)
+
+        // Add neighbors to frontier
+        let neighbors = this.neighbors(node.state)
+        for (action of neighbors) {
+            Object.entries(action).forEach(([action, state]) => {
+                if (!frontier.contains_state(state) && !this.contains_state(this.explored, state)){
+                    const child = Node(state, node, action)
+                    frontier.add(child)
+                }
+            })
+        }
+    }
+}
+
 
 let myArgs = process.argv.slice(2)
 
 if (myArgs.length !== 1) {
-    console.log('Usage: node index maze.txt')
+    console.error('Usage: node index maze.txt')
     return
 }
 
 m = new Maze(myArgs[0])
-console.log(m.start)
-m.neighbors(m.goal)
+process.stdout.write("Maze:")
+process.stdout.write("\n")
+m.print()
+process.stdout.write("Solving...")
+process.stdout.write("\n")
+m.solve()
+console.log(`States explored: ${m.num_explored}`)
+process.stdout.write("Solution:")
+process.stdout.write("\n")
+m.print()
